@@ -1,0 +1,24 @@
+﻿@model FoodSafetyInspection.Domain.Premises
+
+@{
+    ViewData["Title"] = "Delete Premises";
+}
+
+<h1>Delete Premises</h1>
+<p class="text-danger">Are you sure you want to delete this premises?</p>
+
+<dl class="row">
+    <dt class="col-sm-3">Name</dt>
+    <dd class="col-sm-9">@Model.Name</dd>
+    <dt class="col-sm-3">Address</dt>
+    <dd class="col-sm-9">@Model.Address</dd>
+    <dt class="col-sm-3">Town</dt>
+    <dd class="col-sm-9">@Model.Town</dd>
+    <dt class="col-sm-3">Risk Rating</dt>
+    <dd class="col-sm-9">@Model.RiskRating</dd>
+</dl>
+
+<form asp-action="Delete">
+    <button type="submit" class="btn btn-danger">Yes, Delete</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>

@@ -1,0 +1,81 @@
+﻿@model FoodSafetyInspection.MVC.ViewModels.DashboardViewModel
+
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h1>Dashboard</h1>
+
+<!-- Filter Form -->
+<form method="get" asp-action="Index" class="row g-3 mb-4">
+    <div class="col-md-4">
+        <label class="form-label">Filter by Town</label>
+        <select name="filterTown" class="form-control">
+            <option value="">-- All Towns --</option>
+            @foreach (var town in Model.Towns)
+            {
+                <option value="@town" selected="@(Model.FilterTown == town)">@town</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-4">
+        <label class="form-label">Filter by Risk Rating</label>
+        <select name="filterRiskRating" class="form-control">
+            <option value="">-- All Risk Ratings --</option>
+            @foreach (var rating in Model.RiskRatings)
+            {
+                <option value="@rating" selected="@(Model.FilterRiskRating == rating)">@rating</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary me-2">Apply Filters</button>
+        <a asp-action="Index" class="btn btn-secondary">Clear</a>
+    </div>
+</form>
+
+<!-- Stats Cards -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Inspections This Month</div>
+            <div class="card-body">
+                <h1 class="card-title display-4">@Model.InspectionsThisMonth</h1>
+                <p class="card-text">Total inspections carried out this month</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-danger mb-3">
+            <div class="card-header">Failed Inspections This Month</div>
+            <div class="card-body">
+                <h1 class="card-title display-4">@Model.FailedInspectionsThisMonth</h1>
+                <p class="card-text">Inspections that resulted in a fail this month</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-header">Overdue Follow-Ups</div>
+            <div class="card-body">
+                <h1 class="card-title display-4">@Model.OverdueFollowUps</h1>
+                <p class="card-text">Open follow-ups past their due date</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.FilterTown) || !string.IsNullOrEmpty(Model.FilterRiskRating))
+{
+    <div class="alert alert-info">
+        Showing results for:
+        @if (!string.IsNullOrEmpty(Model.FilterTown))
+        {
+            <strong>Town: @Model.FilterTown</strong>
+        }
+        @if (!string.IsNullOrEmpty(Model.FilterRiskRating))
+        {
+            <strong> Risk Rating: @Model.FilterRiskRating</strong>
+        }
+    </div>
+}

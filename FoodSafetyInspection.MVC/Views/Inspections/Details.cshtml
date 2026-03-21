@@ -1,0 +1,43 @@
+﻿@model FoodSafetyInspection.Domain.Inspection
+
+@{
+    ViewData["Title"] = "Inspection Details";
+}
+
+<h1>Inspection Details</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Premises</dt>
+    <dd class="col-sm-9">@Model.Premises?.Name</dd>
+    <dt class="col-sm-3">Date</dt>
+    <dd class="col-sm-9">@Model.InspectionDate.ToShortDateString()</dd>
+    <dt class="col-sm-3">Score</dt>
+    <dd class="col-sm-9">@Model.Score</dd>
+    <dt class="col-sm-3">Outcome</dt>
+    <dd class="col-sm-9">@Model.Outcome</dd>
+    <dt class="col-sm-3">Notes</dt>
+    <dd class="col-sm-9">@Model.Notes</dd>
+</dl>
+
+<h3>Follow-Ups</h3>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Due Date</th>
+            <th>Status</th>
+            <th>Closed Date</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var followUp in Model.FollowUps)
+        {
+            <tr>
+                <td>@followUp.DueDate.ToShortDateString()</td>
+                <td>@followUp.Status</td>
+                <td>@(followUp.ClosedDate.HasValue? followUp.ClosedDate.Value.ToShortDateString() : "N/A")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<a asp-action="Index" class="btn btn-secondary">Back to List</a>

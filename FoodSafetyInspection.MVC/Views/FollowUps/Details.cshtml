@@ -1,0 +1,22 @@
+﻿@model FoodSafetyInspection.Domain.FollowUp
+
+@{
+    ViewData["Title"] = "Follow-Up Details";
+}
+
+<h1>Follow-Up Details</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Premises</dt>
+    <dd class="col-sm-9">@Model.Inspection?.Premises?.Name</dd>
+    <dt class="col-sm-3">Inspection Date</dt>
+    <dd class="col-sm-9">@Model.Inspection?.InspectionDate.ToShortDateString()</dd>
+    <dt class="col-sm-3">Due Date</dt>
+    <dd class="col-sm-9">@Model.DueDate.ToShortDateString()</dd>
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">@Model.Status</dd>
+    <dt class="col-sm-3">Closed Date</dt>
+    <dd class="col-sm-9">@(Model.ClosedDate.HasValue? Model.ClosedDate.Value.ToShortDateString() : "N/A")</dd>
+</dl>
+
+<a asp-action="Index" class="btn btn-secondary">Back to List</a>

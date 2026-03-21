@@ -1,0 +1,38 @@
+﻿@model FoodSafetyInspection.Domain.FollowUp
+
+@{
+    ViewData["Title"] = "Edit Follow-Up";
+}
+
+<h1>Edit Follow-Up</h1>
+
+<form asp-action="Edit">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <input type="hidden" asp-for="Id" />
+
+    <div class="mb-3">
+        <label asp-for="InspectionId" class="form-label">Inspection</label>
+        <select asp-for="InspectionId" class="form-control" asp-items="ViewBag.Inspections">
+            <option value="">-- Select Inspection --</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label asp-for="DueDate" class="form-label"></label>
+        <input asp-for="DueDate" class="form-control" type="date" />
+    </div>
+    <div class="mb-3">
+        <label asp-for="Status" class="form-label"></label>
+        <select asp-for="Status" class="form-control">
+            <option value="Open">Open</option>
+            <option value="Closed">Closed</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label asp-for="ClosedDate" class="form-label"></label>
+        <input asp-for="ClosedDate" class="form-control" type="date" />
+        <small class="text-muted">Required if status is Closed</small>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+</form>
