@@ -71,7 +71,7 @@ namespace FoodSafetyInspection.MVC.Controllers
             return View(inspection);
         }
 
-        [Authorize(Roles = "Admin,Inspector")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id)
         {
             var inspection = await _context.Inspections.FindAsync(id);
@@ -82,7 +82,7 @@ namespace FoodSafetyInspection.MVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Inspector")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Edit(int id, Inspection inspection)
         {
             if (id != inspection.Id) return NotFound();

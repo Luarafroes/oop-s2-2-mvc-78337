@@ -37,7 +37,7 @@
                 <td>@item.Notes</td>
                 <td>
                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                    @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
+                    @if (User.IsInRole("Admin"))
                     {
                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
                     }
