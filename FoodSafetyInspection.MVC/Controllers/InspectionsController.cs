@@ -54,6 +54,14 @@ namespace FoodSafetyInspection.MVC.Controllers
         [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> Create(Inspection inspection)
         {
+            foreach (var key in ModelState.Keys)
+            {
+                var state = ModelState[key];
+                foreach (var error in state.Errors)
+                {
+                    _logger.LogWarning("ModelState error on {Key}: {Error}", key, error.ErrorMessage);
+                }
+            }
             if (ModelState.IsValid)
             {
                 _context.Inspections.Add(inspection);

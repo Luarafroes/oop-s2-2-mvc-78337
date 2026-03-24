@@ -79,3 +79,66 @@
         }
     </div>
 }
+
+<!-- Pass/Fail Trend Chart -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Inspection Pass/Fail Trends — Last 6 Months</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="inspectionChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChartLabels));
+        const passData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChartPass));
+        const failData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.ChartFail));
+
+        const ctx = document.getElementById('inspectionChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Pass',
+                        data: passData,
+                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    },
+                    {
+                        label: 'Fail',
+                        data: failData,
+                        backgroundColor: 'rgba(220, 53, 69, 0.7)',
+                        borderColor: 'rgba(220, 53, 69, 1)',
+                        borderWidth: 1
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { position: 'top' },
+                    title: {
+                        display: true,
+                        text: 'Monthly Inspection Outcomes'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1 }
+                    }
+                }
+            }
+        });
+    </script>
+}

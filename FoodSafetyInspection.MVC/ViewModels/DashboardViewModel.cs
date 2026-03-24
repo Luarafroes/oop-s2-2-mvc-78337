@@ -14,5 +14,10 @@
         // Dropdown options
         public List<string> Towns { get; set; } = new();
         public List<string> RiskRatings { get; set; } = new List<string> { "Low", "Medium", "High" };
+
+        // Chart data
+        public List<string> ChartLabels { get; set; } = new List<string>();
+        public List<int> ChartPass { get; set; } = new List<int>();
+        public List<int> ChartFail { get; set; } = new List<int>();
     }
 }
