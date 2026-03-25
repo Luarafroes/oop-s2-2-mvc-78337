@@ -19,12 +19,23 @@ namespace FoodSafetyInspection.MVC.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? searchStatus, bool overdueOnly = false)
         {
-            var followUps = await _context.FollowUps
+            var query = _context.FollowUps
                 .Include(f => f.Inspection)
                 .ThenInclude(i => i.Premises)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchStatus))
+                query = query.Where(f => f.Status == searchStatus);
+
+            if (overdueOnly)
+                query = query.Where(f => f.Status == "Open" && f.DueDate < DateTime.Today);
+
+            ViewBag.SearchStatus = searchStatus;
+            ViewBag.OverdueOnly = overdueOnly;
+
+            var followUps = await query.ToListAsync();
             return View(followUps);
         }
 

@@ -18,9 +18,29 @@ namespace FoodSafetyInspection.MVC.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? searchName, string? searchTown, string? searchRiskRating)
         {
-            var premises = await _context.Premises.ToListAsync();
+            var query = _context.Premises.AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchName))
+                query = query.Where(p => p.Name.Contains(searchName));
+
+            if (!string.IsNullOrEmpty(searchTown))
+                query = query.Where(p => p.Town == searchTown);
+
+            if (!string.IsNullOrEmpty(searchRiskRating))
+                query = query.Where(p => p.RiskRating == searchRiskRating);
+
+            ViewBag.SearchName = searchName;
+            ViewBag.SearchTown = searchTown;
+            ViewBag.SearchRiskRating = searchRiskRating;
+            ViewBag.Towns = await _context.Premises
+                .Select(p => p.Town)
+                .Distinct()
+                .OrderBy(t => t)
+                .ToListAsync();
+
+            var premises = await query.ToListAsync();
             return View(premises);
         }
 

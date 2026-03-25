@@ -11,6 +11,25 @@
     <a asp-action="Create" class="btn btn-primary mb-3">Add New Inspection</a>
 }
 
+<!-- Search Form -->
+<form method="get" asp-action="Index" class="row g-3 mb-4">
+    <div class="col-md-4">
+        <input type="text" name="searchPremises" value="@ViewBag.SearchPremises"
+               class="form-control" placeholder="Search by premises name..." />
+    </div>
+    <div class="col-md-3">
+        <select name="searchOutcome" class="form-control">
+            <option value="">-- All Outcomes --</option>
+            <option value="Pass" selected="@(ViewBag.SearchOutcome == "Pass")">Pass</option>
+            <option value="Fail" selected="@(ViewBag.SearchOutcome == "Fail")">Fail</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a asp-action="Index" class="btn btn-secondary">Clear</a>
+    </div>
+</form>
+
 <table class="table table-striped">
     <thead>
         <tr>
@@ -37,7 +56,7 @@
                 <td>@item.Notes</td>
                 <td>
                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                    @if (User.IsInRole("Admin"))
+                    @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
                     {
                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
                     }

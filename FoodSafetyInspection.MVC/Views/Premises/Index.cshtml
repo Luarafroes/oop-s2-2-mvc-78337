@@ -6,10 +6,39 @@
 
 <h1>Premises</h1>
 
-@if (User.IsInRole("Admin"))
+@if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
 {
     <a asp-action="Create" class="btn btn-primary mb-3">Add New Premises</a>
 }
+
+<!-- Search Form -->
+<form method="get" asp-action="Index" class="row g-3 mb-4">
+    <div class="col-md-4">
+        <input type="text" name="searchName" value="@ViewBag.SearchName"
+               class="form-control" placeholder="Search by name..." />
+    </div>
+    <div class="col-md-3">
+        <select name="searchTown" class="form-control">
+            <option value="">-- All Towns --</option>
+            @foreach (var town in ViewBag.Towns as List<string> ?? new List<string>())
+            {
+                <option value="@town" selected="@(ViewBag.SearchTown == town)">@town</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="searchRiskRating" class="form-control">
+            <option value="">-- All Risk Ratings --</option>
+            <option value="Low" selected="@(ViewBag.SearchRiskRating == "Low")">Low</option>
+            <option value="Medium" selected="@(ViewBag.SearchRiskRating == "Medium")">Medium</option>
+            <option value="High" selected="@(ViewBag.SearchRiskRating == "High")">High</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Search</button>
+        <a asp-action="Index" class="btn btn-secondary">Clear</a>
+    </div>
+</form>
 
 <table class="table table-striped">
     <thead>
@@ -28,10 +57,14 @@
                 <td>@item.Name</td>
                 <td>@item.Address</td>
                 <td>@item.Town</td>
-                <td>@item.RiskRating</td>
+                <td>
+                    <span class="badge @(item.RiskRating == "High" ? "bg-danger" : item.RiskRating == "Medium" ? "bg-warning text-dark" : "bg-success")">
+                        @item.RiskRating
+                    </span>
+                </td>
                 <td>
                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                    @if (User.IsInRole("Admin"))
+                    @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
                     {
                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
                     }
