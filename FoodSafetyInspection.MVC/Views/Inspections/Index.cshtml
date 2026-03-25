@@ -12,25 +12,31 @@
 }
 
 <!-- Search Form -->
-<form method="get" asp-action="Index" class="row g-3 mb-4">
+<form method="get" asp-action="Index" class="row g-3 mb-4" id="filterForm">
     <div class="col-md-4">
-        <input type="text" name="searchPremises" value="@ViewBag.SearchPremises"
-               class="form-control" placeholder="Search by premises name..." />
+        <input type="text" name="searchPremises" id="liveSearchPremises"
+               value="@ViewBag.SearchPremises"
+               class="form-control" placeholder="Search by premises name..."
+               autocomplete="off" />
+        
     </div>
     <div class="col-md-3">
-        <select name="searchOutcome" class="form-control">
+        <select name="searchOutcome" id="outcomeFilter" class="form-control">
             <option value="">-- All Outcomes --</option>
             <option value="Pass" selected="@(ViewBag.SearchOutcome == "Pass")">Pass</option>
             <option value="Fail" selected="@(ViewBag.SearchOutcome == "Fail")">Fail</option>
         </select>
     </div>
     <div class="col-md-2 d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Search</button>
+        <button type="submit" class="btn btn-primary">Apply Filters</button>
         <a asp-action="Index" class="btn btn-secondary">Clear</a>
     </div>
 </form>
 
-<table class="table table-striped">
+<!-- Results Count -->
+<div id="resultsCount" class="mb-2"></div>
+
+<table class="table table-striped" id="inspectionsTable">
     <thead>
         <tr>
             <th>Premises</th>
@@ -39,12 +45,12 @@
             <th>Outcome</th>
             <th>Notes</th>
             <th>Actions</th>
-        </tr>
     </thead>
     <tbody>
         @foreach (var item in Model)
         {
-            <tr>
+            <tr data-premises="@item.Premises?.Name.ToLower()"
+                data-outcome="@item.Outcome">
                 <td>@item.Premises?.Name</td>
                 <td>@item.InspectionDate.ToShortDateString()</td>
                 <td>@item.Score</td>
@@ -69,3 +75,47 @@
         }
     </tbody>
 </table>
+
+@section Scripts {
+    <script>
+        const rows = document.querySelectorAll('#inspectionsTable tbody tr');
+        const resultsCountDiv = document.getElementById('resultsCount');
+
+        function filterTable() {
+            const searchTerm = document.getElementById('liveSearchPremises')?.value.toLowerCase() || '';
+            const outcomeFilter = document.getElementById('outcomeFilter')?.value || '';
+
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const premisesName = row.getAttribute('data-premises') || '';
+                const outcome = row.getAttribute('data-outcome') || '';
+
+                const matchesName = searchTerm === '' || premisesName.includes(searchTerm);
+                const matchesOutcome = outcomeFilter === '' || outcome === outcomeFilter;
+
+                if (matchesName && matchesOutcome) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            const totalCount = rows.length;
+            resultsCountDiv.innerHTML = `<small class="text-muted">Showing ${visibleCount} of ${totalCount} inspections</small>`;
+
+            if (visibleCount === 0) {
+                resultsCountDiv.innerHTML += `<div class="alert alert-info mt-2">No inspections match your filters</div>`;
+            }
+        }
+
+        const liveSearch = document.getElementById('liveSearchPremises');
+        if (liveSearch) liveSearch.addEventListener('input', filterTable);
+
+        const outcomeSelect = document.getElementById('outcomeFilter');
+        if (outcomeSelect) outcomeSelect.addEventListener('change', filterTable);
+
+        filterTable();
+    </script>
+}

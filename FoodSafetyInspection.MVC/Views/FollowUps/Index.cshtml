@@ -12,9 +12,15 @@
 }
 
 <!-- Search Form -->
-<form method="get" asp-action="Index" class="row g-3 mb-4">
+<form method="get" asp-action="Index" class="row g-3 mb-4" id="filterForm">
+    <div class="col-md-4">
+        <input type="text" name="searchPremises" id="liveSearchPremises"
+               class="form-control" placeholder="Search by premises name..."
+               autocomplete="off" />
+       
+    </div>
     <div class="col-md-3">
-        <select name="searchStatus" class="form-control">
+        <select name="searchStatus" id="statusFilter" class="form-control">
             <option value="">-- All Statuses --</option>
             <option value="Open" selected="@(ViewBag.SearchStatus == "Open")">Open</option>
             <option value="Closed" selected="@(ViewBag.SearchStatus == "Closed")">Closed</option>
@@ -31,12 +37,15 @@
         </div>
     </div>
     <div class="col-md-2 d-flex gap-2">
-        <button type="submit" class="btn btn-primary">Search</button>
+        <button type="submit" class="btn btn-primary">Apply Filters</button>
         <a asp-action="Index" class="btn btn-secondary">Clear</a>
     </div>
 </form>
 
-<table class="table table-striped">
+<!-- Results Count -->
+<div id="resultsCount" class="mb-2"></div>
+
+<table class="table table-striped" id="followUpsTable">
     <thead>
         <tr>
             <th>Premises</th>
@@ -45,12 +54,14 @@
             <th>Status</th>
             <th>Closed Date</th>
             <th>Actions</th>
-        </tr>
     </thead>
     <tbody>
         @foreach (var item in Model)
         {
-            <tr class="@(item.Status == "Open" && item.DueDate < DateTime.Today ? "table-danger" : "")">
+            <tr data-premises="@item.Inspection?.Premises?.Name.ToLower()"
+                data-status="@item.Status"
+                data-due-date="@item.DueDate.ToString("yyyy-MM-dd")"
+                class="@(item.Status == "Open" && item.DueDate < DateTime.Today ? "table-danger" : "")">
                 <td>@item.Inspection?.Premises?.Name</td>
                 <td>@item.Inspection?.InspectionDate.ToShortDateString()</td>
                 <td>@item.DueDate.ToShortDateString()</td>
@@ -75,3 +86,54 @@
         }
     </tbody>
 </table>
+
+@section Scripts {
+    <script>
+        const rows = document.querySelectorAll('#followUpsTable tbody tr');
+        const resultsCountDiv = document.getElementById('resultsCount');
+        const today = new Date().toISOString().split('T')[0];
+
+        function filterTable() {
+            const searchTerm = document.getElementById('liveSearchPremises')?.value.toLowerCase() || '';
+            const statusFilter = document.getElementById('statusFilter')?.value || '';
+            const overdueOnly = document.getElementById('overdueOnly')?.checked || false;
+
+            let visibleCount = 0;
+
+            rows.forEach(row => {
+                const premisesName = row.getAttribute('data-premises') || '';
+                const status = row.getAttribute('data-status') || '';
+                const dueDate = row.getAttribute('data-due-date') || '';
+
+                const matchesName = searchTerm === '' || premisesName.includes(searchTerm);
+                const matchesStatus = statusFilter === '' || status === statusFilter;
+                const matchesOverdue = !overdueOnly || (status === 'Open' && dueDate < today);
+
+                if (matchesName && matchesStatus && matchesOverdue) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            const totalCount = rows.length;
+            resultsCountDiv.innerHTML = `<small class="text-muted">Showing ${visibleCount} of ${totalCount} follow-ups</small>`;
+
+            if (visibleCount === 0) {
+                resultsCountDiv.innerHTML += `<div class="alert alert-info mt-2">No follow-ups match your filters</div>`;
+            }
+        }
+
+        const liveSearch = document.getElementById('liveSearchPremises');
+        if (liveSearch) liveSearch.addEventListener('input', filterTable);
+
+        const statusSelect = document.getElementById('statusFilter');
+        if (statusSelect) statusSelect.addEventListener('change', filterTable);
+
+        const overdueCheckbox = document.getElementById('overdueOnly');
+        if (overdueCheckbox) overdueCheckbox.addEventListener('change', filterTable);
+
+        filterTable();
+    </script>
+}
