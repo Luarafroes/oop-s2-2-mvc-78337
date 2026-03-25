@@ -1,6 +1,77 @@
 ﻿@{
     ViewData["Title"] = "Privacy Policy";
 }
-<h1>@ViewData["Title"]</h1>
 
-<p>Use this page to detail your site's privacy policy.</p>
+<div class="container mt-5">
+
+    <div class="card shadow-lg p-4">
+
+        <div class="text-center mb-4">
+            <i class="bi bi-shield-lock" style="font-size: 3rem; color: #0d6efd;"></i>
+            <h1 class="display-5 mt-2">Privacy Policy</h1>
+            <p class="text-muted">Food Safety Inspection System</p>
+        </div>
+
+        <hr />
+
+        <div class="row">
+
+            <div class="col-md-6">
+                <h4>Data Collection</h4>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>Personal Information:</strong> User accounts (name, email) for inspectors and administrators
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Business Data:</strong> Premises information including addresses and contact details
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Inspection Records:</strong> Inspection scores, outcomes, notes, and follow-up actions
+                    </li>
+                </ul>
+            </div>
+
+            <div class="col-md-6">
+                <h4>Data Usage</h4>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>Purpose:</strong> Track food safety compliance and inspection history
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Access:</strong> Only authorised food safety inspectors and administrators
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Retention:</strong> Data retained in accordance with food safety regulations
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <hr />
+
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <h5>Data Protection</h5>
+                <p class="small text-muted">
+                    This system uses secure authentication and role-based access control to ensure that
+                    inspection data is only accessible to authorised personnel. All data is stored locally
+                    using SQLite and is not shared with third parties.
+                </p>
+            </div>
+        </div>
+
+        <hr />
+
+        <div class="text-center mt-3">
+            <p class="text-muted small">
+                Last updated: @DateTime.Now.ToString("MMMM dd, yyyy")
+            </p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-house-door"></i> Back to Home
+            </a>
+        </div>
+
+    </div>
+
+</div>

@@ -1,8 +1,105 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-5">
+
+    <div class="card shadow-lg p-4">
+
+        <div class="text-center mb-4">
+            <i class="bi bi-shield-check" style="font-size: 3rem; color: #0d6efd;"></i>
+            <h1 class="display-5 mt-2">Food Safety Inspection System</h1>
+            <p class="text-muted">ASP.NET Core MVC Application</p>
+        </div>
+
+        <hr />
+
+        <div class="row">
+
+            <div class="col-md-6">
+                <h4>Module Information</h4>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>Module:</strong> Modern Programming Principles and Practice
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Assessment Type:</strong> Practical Assessment – Individual
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Project:</strong> Food Safety Inspection System
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Weighting:</strong> 30%
+                    </li>
+                </ul>
+            </div>
+
+            <div class="col-md-6">
+                <h4>Student Information</h4>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <strong>Name:</strong> Luara Froes
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Student Number:</strong> 78337
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Repository:</strong>
+                        <a href="https://github.com/Luarafroes/oop-s2-2-mvc-78337" target="_blank">
+                            GitHub Project Link
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+
+        <hr />
+
+        <div class="row mt-3">
+            <div class="col-md-4 text-center">
+                <i class="bi bi-building fs-2 text-primary"></i>
+                <h5 class="mt-2">Premises Management</h5>
+                <p class="small text-muted">Track food establishments with addresses, towns, and risk ratings</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <i class="bi bi-clipboard-check fs-2 text-success"></i>
+                <h5 class="mt-2">Inspections</h5>
+                <p class="small text-muted">Record inspection scores, outcomes, and detailed notes</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <i class="bi bi-calendar-check fs-2 text-warning"></i>
+                <h5 class="mt-2">Follow-Ups</h5>
+                <p class="small text-muted">Manage follow-up actions for failed inspections</p>
+            </div>
+        </div>
+
+        <hr />
+
+        <div class="text-center mt-3">
+            <p class="text-muted">
+                This system allows food safety inspectors to manage premises, track inspection results,
+                and monitor follow-up actions to ensure compliance with food safety standards across Dublin.
+            </p>
+            @if (User.Identity.IsAuthenticated)
+            {
+                <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary mt-2">
+                    <i class="bi bi-speedometer2"></i> Go to Dashboard
+                </a>
+            }
+            else
+            {
+                <div class="mt-3">
+                    <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary me-2">
+                        <i class="bi bi-box-arrow-in-right"></i> Sign In
+                    </a>
+                    <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-outline-secondary">
+                        <i class="bi bi-person-plus"></i> Register
+                    </a>
+                </div>
+            }
+        </div>
+
+    </div>
+
 </div>

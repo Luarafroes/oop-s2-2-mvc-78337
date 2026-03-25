@@ -4,12 +4,18 @@
     ViewData["Title"] = "Inspections";
 }
 
-<h1>Inspections</h1>
-
-@if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
-{
-    <a asp-action="Create" class="btn btn-primary mb-3">Add New Inspection</a>
-}
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">Inspection</h3>
+        <p class="text-muted mb-0">Manage and search food inspection</p>
+        @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
+        {
+            <a asp-action="Create" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle"></i> Add New
+            </a>
+        }
+    </div>
+    <div class="card-body">
 
 <!-- Search Form -->
 <form method="get" asp-action="Index" class="row g-3 mb-4" id="filterForm">
@@ -36,6 +42,7 @@
 <!-- Results Count -->
 <div id="resultsCount" class="mb-2"></div>
 
+        <div class="table-responsive">
 <table class="table table-striped" id="inspectionsTable">
     <thead>
         <tr>
@@ -75,6 +82,8 @@
         }
     </tbody>
 </table>
+        </div>
+    </div>
 
 @section Scripts {
     <script>
