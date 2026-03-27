@@ -5,7 +5,7 @@
 }
 
 <div class="card shadow-sm">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center mb-4">
         <h3 class="mb-0">Inspection</h3>
         <p class="text-muted mb-0">Manage and search food inspection</p>
         @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
@@ -42,89 +42,109 @@
 <!-- Results Count -->
 <div id="resultsCount" class="mb-2"></div>
 
-        <div class="table-responsive">
-<table class="table table-striped" id="inspectionsTable">
-    <thead>
-        <tr>
-            <th>Premises</th>
-            <th>Date</th>
-            <th>Score</th>
-            <th>Outcome</th>
-            <th>Notes</th>
-            <th>Actions</th>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr data-premises="@item.Premises?.Name.ToLower()"
-                data-outcome="@item.Outcome">
-                <td>@item.Premises?.Name</td>
-                <td>@item.InspectionDate.ToShortDateString()</td>
-                <td>@item.Score</td>
-                <td>
-                    <span class="badge @(item.Outcome == "Pass" ? "bg-success" : "bg-danger")">
-                        @item.Outcome
-                    </span>
-                </td>
-                <td>@item.Notes</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                    @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
-                    {
-                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
-                    }
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="inspectionsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Premises</th>
+                            <th>Date</th>
+                            <th>Score</th>
+                            <th>Outcome</th>
+                            <th>Notes</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr data-premises="@item.Premises?.Name.ToLower()"
+                                data-outcome="@item.Outcome">
+                                <td class="fw-semibold">@item.Premises?.Name</td>
+                                <td class="text-muted">@item.InspectionDate.ToShortDateString()</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress" style="height: 16px; width: 80px;">
+                                            <div class="progress-bar @(item.Score >= 60 ? "bg-success" : "bg-danger")"
+                                                 style="width: @item.Score%">
+                                            </div>
+                                        </div>
+                                        <small>@item.Score</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill @(item.Outcome == "Pass" ? "bg-success" : "bg-danger")">
+                                        @(item.Outcome == "Pass" ? "✅" : "❌") @item.Outcome
+                                    </span>
+                                </td>
+                                <td class="text-muted small">@item.Notes</td>
+                                <td class="text-end">
+                                    <a asp-action="Details" asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-info me-1">
+                                        <i class="bi bi-eye"></i> Details
+                                    </a>
+                                    @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-warning me-1">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                    }
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-danger">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
 
 @section Scripts {
-    <script>
-        const rows = document.querySelectorAll('#inspectionsTable tbody tr');
-        const resultsCountDiv = document.getElementById('resultsCount');
+            <script>
+                const rows = document.querySelectorAll('#inspectionsTable tbody tr');
+                const resultsCount = document.getElementById('resultsCount');
+                const noResults = document.getElementById('noResults');
 
-        function filterTable() {
-            const searchTerm = document.getElementById('liveSearchPremises')?.value.toLowerCase() || '';
-            const outcomeFilter = document.getElementById('outcomeFilter')?.value || '';
+                function filterTable() {
+                    const searchTerm = document.getElementById('liveSearchPremises').value.toLowerCase();
+                    const outcomeFilter = document.getElementById('outcomeFilter').value;
 
-            let visibleCount = 0;
+                    let visibleCount = 0;
 
-            rows.forEach(row => {
-                const premisesName = row.getAttribute('data-premises') || '';
-                const outcome = row.getAttribute('data-outcome') || '';
+                    rows.forEach(row => {
+                        const premises = row.getAttribute('data-premises');
+                        const outcome = row.getAttribute('data-outcome');
 
-                const matchesName = searchTerm === '' || premisesName.includes(searchTerm);
-                const matchesOutcome = outcomeFilter === '' || outcome === outcomeFilter;
+                        const matchesName = searchTerm === '' || premises.includes(searchTerm);
+                        const matchesOutcome = outcomeFilter === '' || outcome === outcomeFilter;
 
-                if (matchesName && matchesOutcome) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
+                        if (matchesName && matchesOutcome) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    resultsCount.textContent = `Showing ${visibleCount} of ${rows.length} inspections`;
+                    noResults.classList.toggle('d-none', visibleCount > 0);
                 }
-            });
 
-            const totalCount = rows.length;
-            resultsCountDiv.innerHTML = `<small class="text-muted">Showing ${visibleCount} of ${totalCount} inspections</small>`;
+                function clearFilters() {
+                    document.getElementById('liveSearchPremises').value = '';
+                    document.getElementById('outcomeFilter').value = '';
+                    filterTable();
+                }
 
-            if (visibleCount === 0) {
-                resultsCountDiv.innerHTML += `<div class="alert alert-info mt-2">No inspections match your filters</div>`;
-            }
-        }
+                document.getElementById('liveSearchPremises').addEventListener('input', filterTable);
+                document.getElementById('outcomeFilter').addEventListener('change', filterTable);
 
-        const liveSearch = document.getElementById('liveSearchPremises');
-        if (liveSearch) liveSearch.addEventListener('input', filterTable);
-
-        const outcomeSelect = document.getElementById('outcomeFilter');
-        if (outcomeSelect) outcomeSelect.addEventListener('change', filterTable);
-
-        filterTable();
-    </script>
+                filterTable();
+            </script>
 }

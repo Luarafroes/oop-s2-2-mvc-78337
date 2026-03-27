@@ -92,6 +92,7 @@ namespace FoodSafetyInspection.MVC.Controllers
             }
 
             ViewBag.Premises = new SelectList(_context.Premises, "Id", "Name");
+
             return View(inspection);
         }
 

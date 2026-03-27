@@ -16,25 +16,30 @@
         </select>
         <span asp-validation-for="PremisesId" class="text-danger"></span>
     </div>
+
     <div class="mb-3">
         <label asp-for="InspectionDate" class="form-label"></label>
         <input asp-for="InspectionDate" class="form-control" type="date" />
         <span asp-validation-for="InspectionDate" class="text-danger"></span>
     </div>
+
     <div class="mb-3">
         <label asp-for="Score" class="form-label"></label>
         <input asp-for="Score" class="form-control" type="number" min="0" max="100" />
+        <small class="text-muted">Score below 60 automatically sets Outcome to Fail</small>
         <span asp-validation-for="Score" class="text-danger"></span>
     </div>
+
     <div class="mb-3">
         <label asp-for="Outcome" class="form-label"></label>
-        <select asp-for="Outcome" class="form-control">
+        <select asp-for="Outcome" class="form-control" id="Outcome">
             <option value="">-- Select Outcome --</option>
             <option value="Pass">Pass</option>
             <option value="Fail">Fail</option>
         </select>
         <span asp-validation-for="Outcome" class="text-danger"></span>
     </div>
+
     <div class="mb-3">
         <label asp-for="Notes" class="form-label"></label>
         <textarea asp-for="Notes" class="form-control"></textarea>
@@ -44,3 +49,27 @@
     <button type="submit" class="btn btn-primary">Create</button>
     <a asp-action="Index" class="btn btn-secondary">Cancel</a>
 </form>
+
+@section Scripts {
+    <script>
+        // Set minimum date for inspection to today
+        var today = new Date().toISOString().split('T')[0];
+        document.getElementById('InspectionDate').setAttribute('min', today);
+
+        // Auto set Pass/Fail based on score
+        document.getElementById('Score').addEventListener('input', function () {
+            const score = parseInt(this.value);
+            const outcome = document.getElementById('Outcome');
+
+            if (!isNaN(score)) {
+                if (score >= 60) {
+                    outcome.value = 'Pass';
+                } else {
+                    outcome.value = 'Fail';
+                }
+            } else {
+                outcome.value = ''; // reset if score is empty
+            }
+        });
+    </script>
+}

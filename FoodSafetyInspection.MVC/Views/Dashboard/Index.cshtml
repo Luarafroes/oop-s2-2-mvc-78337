@@ -4,93 +4,208 @@
     ViewData["Title"] = "Dashboard";
 }
 
-<h1>Dashboard</h1>
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="mb-0">Dashboard</h1>
+        <p class="text-muted mb-0">Food Safety Inspection Overview — @DateTime.Today.ToString("MMMM yyyy")</p>
+    </div>
+    <div class="text-muted small">
+        <i class="bi bi-calendar me-1"></i> Last updated: @DateTime.Now.ToString("HH:mm")
+    </div>
+</div>
 
-<!-- Filter Form -->
-<form method="get" asp-action="Index" class="row g-3 mb-4">
-    <div class="col-md-4">
-        <label class="form-label">Filter by Town</label>
-        <select name="filterTown" class="form-control">
-            <option value="">-- All Towns --</option>
-            @foreach (var town in Model.Towns)
+<!-- Filter Card -->
+<div class="card shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="Index" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Filter by Town</label>
+                <select name="filterTown" class="form-select">
+                    <option value="">All Towns</option>
+                    @foreach (var town in Model.Towns)
+                    {
+                        <option value="@town" selected="@(Model.FilterTown == town)">@town</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Filter by Risk Rating</label>
+                <select name="filterRiskRating" class="form-select">
+                    <option value="">All Risk Ratings</option>
+                    @foreach (var rating in Model.RiskRatings)
+                    {
+                        <option value="@rating" selected="@(Model.FilterRiskRating == rating)">@rating</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i> Apply Filters
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-x-circle me-1"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Active Filter Alert -->
+@if (!string.IsNullOrEmpty(Model.FilterTown) || !string.IsNullOrEmpty(Model.FilterRiskRating))
+{
+    <div class="alert alert-info d-flex align-items-center mb-4">
+        <i class="bi bi-info-circle me-2"></i>
+        <span>
+            Showing results for:
+            @if (!string.IsNullOrEmpty(Model.FilterTown))
             {
-                <option value="@town" selected="@(Model.FilterTown == town)">@town</option>
+                <strong> Town: @Model.FilterTown</strong>
             }
-        </select>
-    </div>
-    <div class="col-md-4">
-        <label class="form-label">Filter by Risk Rating</label>
-        <select name="filterRiskRating" class="form-control">
-            <option value="">-- All Risk Ratings --</option>
-            @foreach (var rating in Model.RiskRatings)
+            @if (!string.IsNullOrEmpty(Model.FilterRiskRating))
             {
-                <option value="@rating" selected="@(Model.FilterRiskRating == rating)">@rating</option>
+                <strong> Risk Rating: @Model.FilterRiskRating</strong>
             }
-        </select>
+        </span>
     </div>
-    <div class="col-md-4 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary me-2">Apply Filters</button>
-        <a asp-action="Index" class="btn btn-secondary">Clear</a>
-    </div>
-</form>
+}
 
 <!-- Stats Cards -->
-<div class="row">
+<div class="row g-4 mb-4">
     <div class="col-md-4">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-header">Inspections This Month</div>
-            <div class="card-body">
-                <h1 class="card-title display-4">@Model.InspectionsThisMonth</h1>
-                <p class="card-text">Total inspections carried out this month</p>
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                    <i class="bi bi-clipboard-check text-primary fs-3"></i>
+                </div>
+                <div>
+                    <p class="text-muted mb-0 small">Inspections This Month</p>
+                    <h2 class="mb-0 fw-bold">@Model.InspectionsThisMonth</h2>
+                    <small class="text-muted">Total carried out this month</small>
+                </div>
+            </div>
+            <div class="card-footer bg-primary text-white text-center small py-1">
+                <a asp-controller="Inspections" asp-action="Index" class="text-white text-decoration-none">
+                    View All Inspections <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
         </div>
     </div>
+
     <div class="col-md-4">
-        <div class="card text-white bg-danger mb-3">
-            <div class="card-header">Failed Inspections This Month</div>
-            <div class="card-body">
-                <h1 class="card-title display-4">@Model.FailedInspectionsThisMonth</h1>
-                <p class="card-text">Inspections that resulted in a fail this month</p>
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-danger bg-opacity-10 p-3">
+                    <i class="bi bi-x-circle text-danger fs-3"></i>
+                </div>
+                <div>
+                    <p class="text-muted mb-0 small">Failed Inspections This Month</p>
+                    <h2 class="mb-0 fw-bold text-danger">@Model.FailedInspectionsThisMonth</h2>
+                    <small class="text-muted">Inspections that resulted in fail</small>
+                </div>
+            </div>
+            <div class="card-footer bg-danger text-white text-center small py-1">
+                <a asp-controller="Inspections" asp-action="Index" asp-route-searchOutcome="Fail"
+                   class="text-white text-decoration-none">
+                    View Failed Inspections <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
         </div>
     </div>
+
     <div class="col-md-4">
-        <div class="card text-white bg-warning mb-3">
-            <div class="card-header">Overdue Follow-Ups</div>
-            <div class="card-body">
-                <h1 class="card-title display-4">@Model.OverdueFollowUps</h1>
-                <p class="card-text">Open follow-ups past their due date</p>
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body d-flex align-items-center gap-3">
+                <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                    <i class="bi bi-exclamation-triangle text-warning fs-3"></i>
+                </div>
+                <div>
+                    <p class="text-muted mb-0 small">Overdue Follow-Ups</p>
+                    <h2 class="mb-0 fw-bold text-warning">@Model.OverdueFollowUps</h2>
+                    <small class="text-muted">Open follow-ups past due date</small>
+                </div>
+            </div>
+            <div class="card-footer bg-warning text-white text-center small py-1">
+                <a asp-controller="FollowUps" asp-action="Index" asp-route-overdueOnly="true"
+                   class="text-white text-decoration-none">
+                    View Overdue Follow-Ups <i class="bi bi-arrow-right"></i>
+                </a>
             </div>
         </div>
     </div>
 </div>
 
-@if (!string.IsNullOrEmpty(Model.FilterTown) || !string.IsNullOrEmpty(Model.FilterRiskRating))
-{
-    <div class="alert alert-info">
-        Showing results for:
-        @if (!string.IsNullOrEmpty(Model.FilterTown))
-        {
-            <strong>Town: @Model.FilterTown</strong>
-        }
-        @if (!string.IsNullOrEmpty(Model.FilterRiskRating))
-        {
-            <strong> Risk Rating: @Model.FilterRiskRating</strong>
-        }
-    </div>
-}
-
-<!-- Pass/Fail Trend Chart -->
-<div class="row mt-4">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Inspection Pass/Fail Trends — Last 6 Months</h5>
+<!-- Pass/Fail Rate Summary -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header table-dark text-black">
+                <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Pass Rate This Month</h5>
             </div>
-            <div class="card-body">
-                <canvas id="inspectionChart" height="100"></canvas>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                @if (Model.InspectionsThisMonth > 0)
+                {
+                    var passRate = (int)(((double)(Model.InspectionsThisMonth - Model.FailedInspectionsThisMonth) / Model.InspectionsThisMonth) * 100);
+                    <div class="text-center">
+                        <h1 class="display-3 fw-bold @(passRate >= 60 ? "text-success" : "text-danger")">
+                            @passRate%
+                        </h1>
+                        <p class="text-muted">
+                            @(Model.InspectionsThisMonth - Model.FailedInspectionsThisMonth) passed
+                            out of @Model.InspectionsThisMonth inspections
+                        </p>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar @(passRate >= 60 ? "bg-success" : "bg-danger")"
+                                 style="width: @passRate%">
+                                @passRate%
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted">No inspections this month</p>
+                }
             </div>
         </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-header table-dark text-black">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Quick Summary</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Total Inspections This Month
+                        <span class="badge bg-primary rounded-pill">@Model.InspectionsThisMonth</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Passed This Month
+                        <span class="badge bg-success rounded-pill">@(Model.InspectionsThisMonth - Model.FailedInspectionsThisMonth)</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Failed This Month
+                        <span class="badge bg-danger rounded-pill">@Model.FailedInspectionsThisMonth</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Overdue Follow-Ups
+                        <span class="badge bg-warning rounded-pill">@Model.OverdueFollowUps</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Pass/Fail Trend Chart -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header table-dark text-black">
+        <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>Inspection Pass/Fail Trends — Last 6 Months</h5>
+    </div>
+    <div class="card-body">
+        <canvas id="inspectionChart" height="80"></canvas>
     </div>
 </div>
 
@@ -112,14 +227,16 @@
                         data: passData,
                         backgroundColor: 'rgba(40, 167, 69, 0.7)',
                         borderColor: 'rgba(40, 167, 69, 1)',
-                        borderWidth: 1
+                        borderWidth: 1,
+                        borderRadius: 4
                     },
                     {
                         label: 'Fail',
                         data: failData,
                         backgroundColor: 'rgba(220, 53, 69, 0.7)',
                         borderColor: 'rgba(220, 53, 69, 1)',
-                        borderWidth: 1
+                        borderWidth: 1,
+                        borderRadius: 4
                     }
                 ]
             },
@@ -130,6 +247,18 @@
                     title: {
                         display: true,
                         text: 'Monthly Inspection Outcomes'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            afterBody: function(context) {
+                                const index = context[0].dataIndex;
+                                const pass = passData[index];
+                                const fail = failData[index];
+                                const total = pass + fail;
+                                const rate = total > 0 ? Math.round((pass / total) * 100) : 0;
+                                return `Pass Rate: ${rate}%`;
+                            }
+                        }
                     }
                 },
                 scales: {

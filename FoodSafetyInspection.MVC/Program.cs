@@ -76,6 +76,14 @@ try
     app.UseRouting();
     app.UseAuthentication();
     app.UseAuthorization();
+    app.Use(async (context, next) =>
+    {
+        var requestId = Guid.NewGuid().ToString("N")[..8];
+        using (Serilog.Context.LogContext.PushProperty("RequestId", requestId))
+        {
+            await next();
+        }
+    }); // Add a unique RequestId to each request for better traceability
 
     app.MapControllerRoute(
         name: "default",
@@ -93,3 +101,4 @@ finally
 {
     Log.CloseAndFlush();
 }
+

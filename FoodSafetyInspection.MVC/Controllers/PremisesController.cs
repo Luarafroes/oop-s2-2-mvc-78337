@@ -41,6 +41,10 @@ namespace FoodSafetyInspection.MVC.Controllers
                 .ToListAsync();
 
             var premises = await query.ToListAsync();
+
+            var premises1 = await _context.Premises
+                .Include(p => p.Inspections)
+                .ToListAsync();
             return View(premises);
         }
 
@@ -55,6 +59,14 @@ namespace FoodSafetyInspection.MVC.Controllers
                 _logger.LogWarning("Premises with ID {PremisesId} not found", id);
                 return NotFound();
             }
+            var overdueCount = await _context.FollowUps
+                .Include(f => f.Inspection)
+                .Where(f => f.Inspection.PremisesId == id
+                    && f.Status == "Open"
+                    && f.DueDate < DateTime.Today)
+                .CountAsync();
+
+                ViewBag.OverdueCount = overdueCount;
             return View(premises);
         }
 

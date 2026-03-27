@@ -5,7 +5,7 @@
 }
 
 <div class="card shadow-sm">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center mb-4">
         <h3 class="mb-0">Follow-Ups</h3>
         <p class="text-muted mb-0">Manage and search Follow-Ups</p>
         @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
@@ -51,98 +51,119 @@
 <!-- Results Count -->
 <div id="resultsCount" class="mb-2"></div>
 
-        <div class="table-responsive">
-<table class="table table-striped" id="followUpsTable">
-    <thead>
-        <tr>
-            <th>Premises</th>
-            <th>Inspection Date</th>
-            <th>Due Date</th>
-            <th>Status</th>
-            <th>Closed Date</th>
-            <th>Actions</th>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr data-premises="@item.Inspection?.Premises?.Name.ToLower()"
-                data-status="@item.Status"
-                data-due-date="@item.DueDate.ToString("yyyy-MM-dd")"
-                class="@(item.Status == "Open" && item.DueDate < DateTime.Today ? "table-danger" : "")">
-                <td>@item.Inspection?.Premises?.Name</td>
-                <td>@item.Inspection?.InspectionDate.ToShortDateString()</td>
-                <td>@item.DueDate.ToShortDateString()</td>
-                <td>
-                    <span class="badge @(item.Status == "Open" ? "bg-warning text-dark" : "bg-success")">
-                        @item.Status
-                    </span>
-                </td>
-                <td>@(item.ClosedDate.HasValue? item.ClosedDate.Value.ToShortDateString() : "N/A")</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                    @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
-                    {
-                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
-                    }
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
-                    }
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+        <!-- Table -->
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="followUpsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Premises</th>
+                            <th>Inspection Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Closed Date</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var isOverdue = item.Status == "Open" && item.DueDate < DateTime.Today;
+                            <tr data-premises="@item.Inspection?.Premises?.Name.ToLower()"
+                                data-status="@item.Status"
+                                data-due-date="@item.DueDate.ToString("yyyy-MM-dd")"
+                                class="@(isOverdue ? "table-danger" : "")">
+                                <td class="fw-semibold">@item.Inspection?.Premises?.Name</td>
+                                <td class="text-muted">@item.Inspection?.InspectionDate.ToShortDateString()</td>
+                                <td>
+                                    @item.DueDate.ToShortDateString()
+                                    @if (isOverdue)
+                                    {
+                                        var days = (DateTime.Today - item.DueDate).Days;
+                                        <span class="badge bg-danger ms-1">@days day(s) overdue</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill @(item.Status == "Open" ? "bg-warning text-dark" : "bg-success")">
+                                        @(item.Status == "Open" ? "🕐" : "✅") @item.Status
+                                    </span>
+                                </td>
+                                <td class="text-muted">
+                                    @(item.ClosedDate.HasValue? item.ClosedDate.Value.ToShortDateString() : "N/A")
+                                </td>
+                                <td class="text-end">
+                                    <a asp-action="Details" asp-route-id="@item.Id"
+                                       class="btn btn-sm btn-info me-1">
+                                        <i class="bi bi-eye"></i> Details
+                                    </a>
+                                    @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-warning me-1">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                    }
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-danger">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
-    </div>
 
 @section Scripts {
-    <script>
-        const rows = document.querySelectorAll('#followUpsTable tbody tr');
-        const resultsCountDiv = document.getElementById('resultsCount');
-        const today = new Date().toISOString().split('T')[0];
+            <script>
+                const rows = document.querySelectorAll('#followUpsTable tbody tr');
+                const resultsCount = document.getElementById('resultsCount');
+                const noResults = document.getElementById('noResults');
+                const today = new Date().toISOString().split('T')[0];
 
-        function filterTable() {
-            const searchTerm = document.getElementById('liveSearchPremises')?.value.toLowerCase() || '';
-            const statusFilter = document.getElementById('statusFilter')?.value || '';
-            const overdueOnly = document.getElementById('overdueOnly')?.checked || false;
+                function filterTable() {
+                    const searchTerm = document.getElementById('liveSearchPremises').value.toLowerCase();
+                    const statusFilter = document.getElementById('statusFilter').value;
+                    const overdueOnly = document.getElementById('overdueOnly').checked;
 
-            let visibleCount = 0;
+                    let visibleCount = 0;
 
-            rows.forEach(row => {
-                const premisesName = row.getAttribute('data-premises') || '';
-                const status = row.getAttribute('data-status') || '';
-                const dueDate = row.getAttribute('data-due-date') || '';
+                    rows.forEach(row => {
+                        const premises = row.getAttribute('data-premises') || '';
+                        const status = row.getAttribute('data-status') || '';
+                        const dueDate = row.getAttribute('data-due-date') || '';
 
-                const matchesName = searchTerm === '' || premisesName.includes(searchTerm);
-                const matchesStatus = statusFilter === '' || status === statusFilter;
-                const matchesOverdue = !overdueOnly || (status === 'Open' && dueDate < today);
+                        const matchesName = searchTerm === '' || premises.includes(searchTerm);
+                        const matchesStatus = statusFilter === '' || status === statusFilter;
+                        const matchesOverdue = !overdueOnly || (status === 'Open' && dueDate < today);
 
-                if (matchesName && matchesStatus && matchesOverdue) {
-                    row.style.display = '';
-                    visibleCount++;
-                } else {
-                    row.style.display = 'none';
+                        if (matchesName && matchesStatus && matchesOverdue) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    resultsCount.textContent = `Showing ${visibleCount} of ${rows.length} follow-ups`;
+                    noResults.classList.toggle('d-none', visibleCount > 0);
                 }
-            });
 
-            const totalCount = rows.length;
-            resultsCountDiv.innerHTML = `<small class="text-muted">Showing ${visibleCount} of ${totalCount} follow-ups</small>`;
+                function clearFilters() {
+                    document.getElementById('liveSearchPremises').value = '';
+                    document.getElementById('statusFilter').value = '';
+                    document.getElementById('overdueOnly').checked = false;
+                    filterTable();
+                }
 
-            if (visibleCount === 0) {
-                resultsCountDiv.innerHTML += `<div class="alert alert-info mt-2">No follow-ups match your filters</div>`;
-            }
-        }
+                document.getElementById('liveSearchPremises').addEventListener('input', filterTable);
+                document.getElementById('statusFilter').addEventListener('change', filterTable);
+                document.getElementById('overdueOnly').addEventListener('change', filterTable);
 
-        const liveSearch = document.getElementById('liveSearchPremises');
-        if (liveSearch) liveSearch.addEventListener('input', filterTable);
-
-        const statusSelect = document.getElementById('statusFilter');
-        if (statusSelect) statusSelect.addEventListener('change', filterTable);
-
-        const overdueCheckbox = document.getElementById('overdueOnly');
-        if (overdueCheckbox) overdueCheckbox.addEventListener('change', filterTable);
-
-        filterTable();
-    </script>
+                filterTable();
+            </script>
 }
