@@ -19,11 +19,22 @@ namespace FoodSafetyInspection.MVC.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? searchOutcome, string? searchPremises)
         {
-            var inspections = await _context.Inspections
+            var query = _context.Inspections
                 .Include(i => i.Premises)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchOutcome))
+                query = query.Where(i => i.Outcome == searchOutcome);
+
+            if (!string.IsNullOrEmpty(searchPremises))
+                query = query.Where(i => i.Premises.Name.Contains(searchPremises));
+
+            ViewBag.SearchOutcome = searchOutcome;
+            ViewBag.SearchPremises = searchPremises;
+
+            var inspections = await query.ToListAsync();
             return View(inspections);
         }
 
@@ -54,24 +65,39 @@ namespace FoodSafetyInspection.MVC.Controllers
         [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> Create(Inspection inspection)
         {
-            if (ModelState.IsValid)
+            ModelState.Remove("Premises");
+            ModelState.Remove("FollowUps");
+
+            try
             {
-                _context.Inspections.Add(inspection);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Inspection created: ID {InspectionId} for PremisesId {PremisesId} Outcome {Outcome} by {User}",
-                    inspection.Id, inspection.PremisesId, inspection.Outcome, User.Identity?.Name);
+                if (ModelState.IsValid)
+                {
+                    _context.Inspections.Add(inspection);
+                    await _context.SaveChangesAsync();
+                    var safeOutcome = inspection.Outcome?.Replace("\r", string.Empty).Replace("\n", string.Empty);
+                    _logger.LogInformation("Inspection created: ID {InspectionId} for PremisesId {PremisesId} Outcome {Outcome} by {User}",
+                        inspection.Id, inspection.PremisesId, safeOutcome, User.Identity?.Name);
 
-                if (inspection.Outcome == "Fail")
-                    _logger.LogWarning("Failed inspection recorded: ID {InspectionId} for PremisesId {PremisesId} Score {Score}",
-                        inspection.Id, inspection.PremisesId, inspection.Score);
+                    if (inspection.Outcome == "Fail")
+                        _logger.LogWarning("Failed inspection recorded: ID {InspectionId} for PremisesId {PremisesId} Score {Score}",
+                            inspection.Id, inspection.PremisesId, inspection.Score);
 
-                return RedirectToAction(nameof(Index));
+                    return RedirectToAction(nameof(Index));
+                }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating inspection for PremisesId {PremisesId} by {User}",
+                    inspection.PremisesId, User.Identity?.Name);
+                ModelState.AddModelError("", "An unexpected error occurred. Please try again.");
+            }
+
             ViewBag.Premises = new SelectList(_context.Premises, "Id", "Name");
+
             return View(inspection);
         }
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> Edit(int id)
         {
             var inspection = await _context.Inspections.FindAsync(id);
@@ -82,19 +108,32 @@ namespace FoodSafetyInspection.MVC.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> Edit(int id, Inspection inspection)
         {
+            ModelState.Remove("Premises");
+            ModelState.Remove("FollowUps");
+
             if (id != inspection.Id) return NotFound();
 
-            if (ModelState.IsValid)
+            try
             {
-                _context.Update(inspection);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Inspection updated: ID {InspectionId} by {User}",
-                    inspection.Id, User.Identity?.Name);
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    _context.Update(inspection);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Inspection updated: ID {InspectionId} by {User}",
+                        inspection.Id, User.Identity?.Name);
+                    return RedirectToAction(nameof(Index));
+                }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating inspection ID {InspectionId} by {User}",
+                    inspection.Id, User.Identity?.Name);
+                ModelState.AddModelError("", "An unexpected error occurred. Please try again.");
+            }
+
             ViewBag.Premises = new SelectList(_context.Premises, "Id", "Name", inspection.PremisesId);
             return View(inspection);
         }
@@ -114,14 +153,23 @@ namespace FoodSafetyInspection.MVC.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var inspection = await _context.Inspections.FindAsync(id);
-            if (inspection != null)
+            try
             {
-                _context.Inspections.Remove(inspection);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Inspection deleted: ID {InspectionId} by {User}",
+                var inspection = await _context.Inspections.FindAsync(id);
+                if (inspection != null)
+                {
+                    _context.Inspections.Remove(inspection);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Inspection deleted: ID {InspectionId} by {User}",
+                        id, User.Identity?.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting inspection ID {InspectionId} by {User}",
                     id, User.Identity?.Name);
             }
+
             return RedirectToAction(nameof(Index));
         }
     }

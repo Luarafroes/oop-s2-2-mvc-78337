@@ -18,9 +18,33 @@ namespace FoodSafetyInspection.MVC.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? searchName, string? searchTown, string? searchRiskRating)
         {
-            var premises = await _context.Premises.ToListAsync();
+            var query = _context.Premises.AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchName))
+                query = query.Where(p => p.Name.Contains(searchName));
+
+            if (!string.IsNullOrEmpty(searchTown))
+                query = query.Where(p => p.Town == searchTown);
+
+            if (!string.IsNullOrEmpty(searchRiskRating))
+                query = query.Where(p => p.RiskRating == searchRiskRating);
+
+            ViewBag.SearchName = searchName;
+            ViewBag.SearchTown = searchTown;
+            ViewBag.SearchRiskRating = searchRiskRating;
+            ViewBag.Towns = await _context.Premises
+                .Select(p => p.Town)
+                .Distinct()
+                .OrderBy(t => t)
+                .ToListAsync();
+
+            var premises = await query.ToListAsync();
+
+            var premises1 = await _context.Premises
+                .Include(p => p.Inspections)
+                .ToListAsync();
             return View(premises);
         }
 
@@ -35,25 +59,68 @@ namespace FoodSafetyInspection.MVC.Controllers
                 _logger.LogWarning("Premises with ID {PremisesId} not found", id);
                 return NotFound();
             }
+            var overdueCount = await _context.FollowUps
+                .Include(f => f.Inspection)
+                .Where(f => f.Inspection.PremisesId == id
+                    && f.Status == "Open"
+                    && f.DueDate < DateTime.Today)
+                .CountAsync();
+
+                ViewBag.OverdueCount = overdueCount;
             return View(premises);
         }
 
         [Authorize(Roles = "Admin,Inspector")]
-        public IActionResult Create() => View();
+        public IActionResult Create()
+        {
+            return View();
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> Create(Premises premises)
         {
-            if (ModelState.IsValid)
+            ModelState.Remove("Inspections");
+
+            // Sanitize user-controlled values before logging to prevent log forging
+            string safePremisesName = premises.Name?
+                .Replace("\r", " ")
+                .Replace("\n", " ");
+            string safeUserName = User.Identity?.Name?
+                .Replace("\r", " ")
+                    var safeName = premises.Name?
+                        .Replace(Environment.NewLine, string.Empty)
+                        .Replace("\n", string.Empty)
+                        .Replace("\r", string.Empty);
+                    var safeTown = premises.Town?
+                        .Replace(Environment.NewLine, string.Empty)
+                        .Replace("\n", string.Empty)
+                        .Replace("\r", string.Empty);
+                .Replace("\n", " ");
+                        safeName, safeTown, premises.Id, User.Identity?.Name);
+            try
             {
-                _context.Premises.Add(premises);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Premises created: {PremisesName} in {Town} with ID {PremisesId} by {User}",
-                    premises.Name, premises.Town, premises.Id, User.Identity?.Name);
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    _context.Premises.Add(premises);
+                var safeName = premises.Name?
+                    .Replace(Environment.NewLine, string.Empty)
+                    .Replace("\n", string.Empty)
+                    .Replace("\r", string.Empty);
+                    await _context.SaveChangesAsync();
+                    safeName, User.Identity?.Name);
+                        safePremisesName, premises.Town, premises.Id, safeUserName);
+                    return RedirectToAction(nameof(Index));
+                }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating premises {PremisesName} by {User}",
+                    safePremisesName, safeUserName);
+                ModelState.AddModelError("", "An unexpected error occurred. Please try again.");
+            }
+
             return View(premises);
         }
 
@@ -70,16 +137,28 @@ namespace FoodSafetyInspection.MVC.Controllers
         [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> Edit(int id, Premises premises)
         {
+            ModelState.Remove("Inspections");
+
             if (id != premises.Id) return NotFound();
 
-            if (ModelState.IsValid)
+            try
             {
-                _context.Update(premises);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Premises updated: ID {PremisesId} by {User}",
-                    premises.Id, User.Identity?.Name);
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    _context.Update(premises);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Premises updated: ID {PremisesId} by {User}",
+                        premises.Id, User.Identity?.Name);
+                    return RedirectToAction(nameof(Index));
+                }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating premises ID {PremisesId} by {User}",
+                    premises.Id, User.Identity?.Name);
+                ModelState.AddModelError("", "An unexpected error occurred. Please try again.");
+            }
+
             return View(premises);
         }
 
@@ -96,14 +175,23 @@ namespace FoodSafetyInspection.MVC.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var premises = await _context.Premises.FindAsync(id);
-            if (premises != null)
+            try
             {
-                _context.Premises.Remove(premises);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("Premises deleted: ID {PremisesId} by {User}",
+                var premises = await _context.Premises.FindAsync(id);
+                if (premises != null)
+                {
+                    _context.Premises.Remove(premises);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Premises deleted: ID {PremisesId} by {User}",
+                        id, User.Identity?.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting premises ID {PremisesId} by {User}",
                     id, User.Identity?.Name);
             }
+
             return RedirectToAction(nameof(Index));
         }
     }

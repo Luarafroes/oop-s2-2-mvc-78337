@@ -20,13 +20,15 @@ try
 
     // Replace default logging with Serilog
     builder.Host.UseSerilog((context, services, configuration) => configuration
-        .ReadFrom.Configuration(context.Configuration)
-        .ReadFrom.Services(services)
-        .Enrich.FromLogContext()
-        .Enrich.WithMachineName()
-        .Enrich.WithEnvironmentName()
-        .WriteTo.Console()
-        .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day));
+    .ReadFrom.Configuration(context.Configuration)
+    .ReadFrom.Services(services)
+    .Enrich.FromLogContext()
+    .Enrich.WithMachineName()
+    .Enrich.WithEnvironmentName()
+    .Enrich.WithProperty("Application", "FoodSafetyInspection")
+    .WriteTo.Console()
+    .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+    .WriteTo.Seq("http://localhost:5341")); 
 
     // Add DbContext with SQLite
     builder.Services.AddDbContext<AppDbContext>(options =>
@@ -74,6 +76,14 @@ try
     app.UseRouting();
     app.UseAuthentication();
     app.UseAuthorization();
+    app.Use(async (context, next) =>
+    {
+        var requestId = Guid.NewGuid().ToString("N")[..8];
+        using (Serilog.Context.LogContext.PushProperty("RequestId", requestId))
+        {
+            await next();
+        }
+    }); // Add a unique RequestId to each request for better traceability
 
     app.MapControllerRoute(
         name: "default",
@@ -91,3 +101,4 @@ finally
 {
     Log.CloseAndFlush();
 }
+

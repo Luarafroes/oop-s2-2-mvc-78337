@@ -21,7 +21,7 @@ namespace FoodSafetyInspection.MVC.Controllers
             var now = DateTime.Today;
             var startOfMonth = new DateTime(now.Year, now.Month, 1);
 
-            // Base query for inspections - apply filters if provided
+            // Base query for inspections
             var inspectionsQuery = _context.Inspections
                 .Include(i => i.Premises)
                 .AsQueryable();
@@ -44,7 +44,7 @@ namespace FoodSafetyInspection.MVC.Controllers
                 .Where(i => i.InspectionDate >= startOfMonth && i.Outcome == "Fail")
                 .CountAsync();
 
-            // Overdue follow-ups (DueDate past + still Open)
+            // Overdue follow-ups
             var overdueFollowUpsQuery = _context.FollowUps
                 .Include(f => f.Inspection)
                 .ThenInclude(i => i.Premises)
@@ -68,6 +68,41 @@ namespace FoodSafetyInspection.MVC.Controllers
                 .OrderBy(t => t)
                 .ToListAsync();
 
+            // Build last 6 months chart data
+            var chartLabels = new List<string>();
+            var chartPass = new List<int>();
+            var chartFail = new List<int>();
+
+            for (int i = 5; i >= 0; i--)
+            {
+                var monthStart = new DateTime(now.Year, now.Month, 1).AddMonths(-i);
+                var monthEnd = monthStart.AddMonths(1);
+                var monthName = monthStart.ToString("MMM yyyy");
+
+                var monthQuery = _context.Inspections
+                    .Include(x => x.Premises)
+                    .AsQueryable();
+
+                if (!string.IsNullOrEmpty(filterTown))
+                    monthQuery = monthQuery.Where(x => x.Premises.Town == filterTown);
+
+                if (!string.IsNullOrEmpty(filterRiskRating))
+                    monthQuery = monthQuery.Where(x => x.Premises.RiskRating == filterRiskRating);
+
+                var passCount = await monthQuery
+                    .Where(x => x.InspectionDate >= monthStart && x.InspectionDate < monthEnd && x.Outcome == "Pass")
+                    .CountAsync();
+
+                var failCount = await monthQuery
+                    .Where(x => x.InspectionDate >= monthStart && x.InspectionDate < monthEnd && x.Outcome == "Fail")
+                    .CountAsync();
+
+                chartLabels.Add(monthName);
+                chartPass.Add(passCount);
+                chartFail.Add(failCount);
+            }
+
+            // Build view model
             var viewModel = new DashboardViewModel
             {
                 InspectionsThisMonth = inspectionsThisMonth,
@@ -75,10 +110,15 @@ namespace FoodSafetyInspection.MVC.Controllers
                 OverdueFollowUps = overdueCount,
                 FilterTown = filterTown,
                 FilterRiskRating = filterRiskRating,
-                Towns = towns
+                Towns = towns,
+                ChartLabels = chartLabels,
+                ChartPass = chartPass,
+                ChartFail = chartFail
             };
 
             return View(viewModel);
         }
+
+
     }
 }

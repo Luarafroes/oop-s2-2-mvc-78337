@@ -19,12 +19,23 @@ namespace FoodSafetyInspection.MVC.Controllers
             _logger = logger;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? searchStatus, bool overdueOnly = false)
         {
-            var followUps = await _context.FollowUps
+            var query = _context.FollowUps
                 .Include(f => f.Inspection)
                 .ThenInclude(i => i.Premises)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchStatus))
+                query = query.Where(f => f.Status == searchStatus);
+
+            if (overdueOnly)
+                query = query.Where(f => f.Status == "Open" && f.DueDate < DateTime.Today);
+
+            ViewBag.SearchStatus = searchStatus;
+            ViewBag.OverdueOnly = overdueOnly;
+
+            var followUps = await query.ToListAsync();
             return View(followUps);
         }
 
@@ -44,9 +55,20 @@ namespace FoodSafetyInspection.MVC.Controllers
         }
 
         [Authorize(Roles = "Admin,Inspector")]
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            ViewBag.Inspections = new SelectList(_context.Inspections, "Id", "Id");
+            var inspections = await _context.Inspections
+                .Include(i => i.Premises)
+                .ToListAsync();
+
+            ViewBag.Inspections = new SelectList(
+                inspections.Select(i => new {
+                    i.Id,
+                    Display = $"{i.Premises?.Name} — {i.InspectionDate.ToShortDateString()}"
+                }),
+                "Id",
+                "Display"
+            );
             return View();
         }
 
@@ -55,6 +77,8 @@ namespace FoodSafetyInspection.MVC.Controllers
         [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> Create(FollowUp followUp)
         {
+            ModelState.Remove("Inspection");
+
             // Business rule: due date must be after inspection date
             var inspection = await _context.Inspections.FindAsync(followUp.InspectionId);
             if (inspection != null && followUp.DueDate < inspection.InspectionDate)
@@ -64,17 +88,38 @@ namespace FoodSafetyInspection.MVC.Controllers
                 ModelState.AddModelError("DueDate", "Due date cannot be before the inspection date.");
             }
 
-            if (ModelState.IsValid)
+            try
             {
-                followUp.Status = "Open";
-                followUp.ClosedDate = null;
-                _context.FollowUps.Add(followUp);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("FollowUp created: ID {FollowUpId} for InspectionId {InspectionId} DueDate {DueDate} by {User}",
-                    followUp.Id, followUp.InspectionId, followUp.DueDate, User.Identity?.Name);
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    followUp.Status = "Open";
+                    followUp.ClosedDate = null;
+                    _context.FollowUps.Add(followUp);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("FollowUp created: ID {FollowUpId} for InspectionId {InspectionId} DueDate {DueDate} by {User}",
+                        followUp.Id, followUp.InspectionId, followUp.DueDate, User.Identity?.Name);
+                    return RedirectToAction(nameof(Index));
+                }
             }
-            ViewBag.Inspections = new SelectList(_context.Inspections, "Id", "Id");
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating FollowUp for InspectionId {InspectionId} by {User}",
+                    followUp.InspectionId, User.Identity?.Name);
+                ModelState.AddModelError("", "An unexpected error occurred. Please try again.");
+            }
+
+            var inspections = await _context.Inspections
+                .Include(i => i.Premises)
+                .ToListAsync();
+
+            ViewBag.Inspections = new SelectList(
+                inspections.Select(i => new {
+                    i.Id,
+                    Display = $"{i.Premises?.Name} — {i.InspectionDate.ToShortDateString()}"
+                }),
+                "Id",
+                "Display"
+            );
             return View(followUp);
         }
 
@@ -83,7 +128,20 @@ namespace FoodSafetyInspection.MVC.Controllers
         {
             var followUp = await _context.FollowUps.FindAsync(id);
             if (followUp == null) return NotFound();
-            ViewBag.Inspections = new SelectList(_context.Inspections, "Id", "Id", followUp.InspectionId);
+
+            var inspections = await _context.Inspections
+                .Include(i => i.Premises)
+                .ToListAsync();
+
+            ViewBag.Inspections = new SelectList(
+                inspections.Select(i => new {
+                    i.Id,
+                    Display = $"{i.Premises?.Name} — {i.InspectionDate.ToShortDateString()}"
+                }),
+                "Id",
+                "Display",
+                followUp.InspectionId
+            );
             return View(followUp);
         }
 
@@ -92,6 +150,8 @@ namespace FoodSafetyInspection.MVC.Controllers
         [Authorize(Roles = "Admin,Inspector")]
         public async Task<IActionResult> Edit(int id, FollowUp followUp)
         {
+            ModelState.Remove("Inspection");
+
             if (id != followUp.Id) return NotFound();
 
             if (followUp.Status == "Closed" && followUp.ClosedDate == null)
@@ -101,15 +161,38 @@ namespace FoodSafetyInspection.MVC.Controllers
                 ModelState.AddModelError("ClosedDate", "A closed date is required when closing a follow-up.");
             }
 
-            if (ModelState.IsValid)
+            try
             {
-                _context.Update(followUp);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("FollowUp updated: ID {FollowUpId} Status {Status} by {User}",
-                    followUp.Id, followUp.Status, User.Identity?.Name);
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    _context.Update(followUp);
+                    await _context.SaveChangesAsync();
+                    var safeStatus = SanitizeForLog(followUp.Status);
+                    _logger.LogInformation("FollowUp updated: ID {FollowUpId} Status {Status} by {User}",
+                        followUp.Id, safeStatus, User.Identity?.Name);
+                    return RedirectToAction(nameof(Index));
+                }
             }
-            ViewBag.Inspections = new SelectList(_context.Inspections, "Id", "Id", followUp.InspectionId);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating FollowUp ID {FollowUpId} by {User}",
+                    followUp.Id, User.Identity?.Name);
+                ModelState.AddModelError("", "An unexpected error occurred. Please try again.");
+            }
+
+            var inspections = await _context.Inspections
+                .Include(i => i.Premises)
+                .ToListAsync();
+
+            ViewBag.Inspections = new SelectList(
+                inspections.Select(i => new {
+                    i.Id,
+                    Display = $"{i.Premises?.Name} — {i.InspectionDate.ToShortDateString()}"
+                }),
+                "Id",
+                "Display",
+                followUp.InspectionId
+            );
             return View(followUp);
         }
 
@@ -118,6 +201,7 @@ namespace FoodSafetyInspection.MVC.Controllers
         {
             var followUp = await _context.FollowUps
                 .Include(f => f.Inspection)
+                .ThenInclude(i => i.Premises)
                 .FirstOrDefaultAsync(f => f.Id == id);
             if (followUp == null) return NotFound();
             return View(followUp);
@@ -128,15 +212,38 @@ namespace FoodSafetyInspection.MVC.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var followUp = await _context.FollowUps.FindAsync(id);
-            if (followUp != null)
+            try
             {
-                _context.FollowUps.Remove(followUp);
-                await _context.SaveChangesAsync();
-                _logger.LogInformation("FollowUp deleted: ID {FollowUpId} by {User}",
+                var followUp = await _context.FollowUps.FindAsync(id);
+                if (followUp != null)
+                {
+                    _context.FollowUps.Remove(followUp);
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("FollowUp deleted: ID {FollowUpId} by {User}",
+                        id, User.Identity?.Name);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting FollowUp ID {FollowUpId} by {User}",
                     id, User.Identity?.Name);
             }
+
             return RedirectToAction(nameof(Index));
+        }
+
+        private static string SanitizeForLog(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return input;
+            }
+
+            // Remove line breaks to prevent log forging via injected new log lines.
+            return input
+                .Replace("\r\n", string.Empty)
+                .Replace("\n", string.Empty)
+                .Replace("\r", string.Empty);
         }
     }
 }

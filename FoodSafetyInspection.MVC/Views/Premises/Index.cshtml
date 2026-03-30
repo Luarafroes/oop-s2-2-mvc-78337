@@ -4,43 +4,166 @@
     ViewData["Title"] = "Premises";
 }
 
-<h1>Premises</h1>
-
-@if (User.IsInRole("Admin"))
-{
-    <a asp-action="Create" class="btn btn-primary mb-3">Add New Premises</a>
-}
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Address</th>
-            <th>Town</th>
-            <th>Risk Rating</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
+<div class="card shadow-sm">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">Premises</h3>
+            <p class="text-muted mb-0">Manage and search food premises under inspection</p>
+        @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
         {
-            <tr>
-                <td>@item.Name</td>
-                <td>@item.Address</td>
-                <td>@item.Town</td>
-                <td>@item.RiskRating</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Details</a>
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edit</a>
-                    }
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Delete</a>
-                    }
-                </td>
-            </tr>
+            <a asp-action="Create" class="btn btn-sm btn-primary">
+                <i class="bi bi-plus-circle"></i> Add New
+            </a>
         }
-    </tbody>
-</table>
+    </div>
+    <div class="card-body">
+
+<!-- Search Form - Mixed Approach -->
+<form method="get" asp-action="Index" class="row g-3 mb-4" id="filterForm">
+    <div class="col-md-4">
+        <input type="text" name="searchName" id="liveSearchName"
+               value="@ViewBag.SearchName"
+               class="form-control" placeholder="Search by name..."
+               autocomplete="off" />
+        
+    </div>
+    <div class="col-md-3">
+        <select name="searchTown" id="townFilter" class="form-control">
+            <option value="">-- All Towns --</option>
+            @foreach (var town in ViewBag.Towns as List<string> ?? new List<string>())
+            {
+                <option value="@town" selected="@(ViewBag.SearchTown == town)">@town</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="searchRiskRating" id="riskFilter" class="form-control">
+            <option value="">-- All Risk Ratings --</option>
+            <option value="Low" selected="@(ViewBag.SearchRiskRating == "Low")">Low</option>
+            <option value="Medium" selected="@(ViewBag.SearchRiskRating == "Medium")">Medium</option>
+            <option value="High" selected="@(ViewBag.SearchRiskRating == "High")">High</option>
+        </select>
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Apply Filters</button>
+        <a asp-action="Index" class="btn btn-secondary">Clear</a>
+    </div>
+</form>
+
+<!-- Results Count -->
+<div id="resultsCount" class="mb-2"></div>
+
+        <!-- Table -->
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="premisesTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Name</th>
+                            <th>Address</th>
+                            <th>Town</th>
+                            <th>Risk Rating</th>
+                            <th>Last Inspection</th>
+                            <th>Total Inspections</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr data-name="@item.Name.ToLower()"
+                                data-town="@item.Town"
+                                data-risk="@item.RiskRating"
+                                class="@(item.RiskRating == "High" ? "table-danger bg-opacity-10" : "")">
+                                <td class="fw-semibold">@item.Name</td>
+                                <td class="text-muted">@item.Address</td>
+                                <td><i class="bi bi-geo-alt text-muted me-1"></i>@item.Town</td>
+                                <td>
+                                    <span class="badge rounded-pill @(item.RiskRating == "High" ? "bg-danger" : item.RiskRating == "Medium" ? "bg-warning text-dark" : "bg-success")">
+                                        @item.RiskRating
+                                    </span>
+                                </td>
+                                <td>
+                                    @(item.Inspections.Any()
+                                                                    ? item.Inspections.Max(i => i.InspectionDate).ToShortDateString()
+                                                                    : "<span class='text-muted'>Never</span>")
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary rounded-pill">
+                                    @item.Inspections.Count
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <a asp-action="Details" asp-route-id="@item.Id"
+                                   class="btn btn-sm btn-info me-1">
+                                    <i class="bi bi-eye"></i> Details
+                                </a>
+                                @if (User.IsInRole("Admin") || User.IsInRole("Inspector"))
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-warning me-1">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                    }
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <a asp-action="Delete" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-danger">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+@section Scripts {
+            <script>
+                const rows = document.querySelectorAll('#premisesTable tbody tr');
+                const resultsCount = document.getElementById('resultsCount');
+                const noResults = document.getElementById('noResults');
+
+                function filterTable() {
+                    const searchTerm = document.getElementById('liveSearchName').value.toLowerCase();
+                    const townFilter = document.getElementById('townFilter').value;
+                    const riskFilter = document.getElementById('riskFilter').value;
+
+                    let visibleCount = 0;
+
+                    rows.forEach(row => {
+                        const name = row.getAttribute('data-name');
+                        const town = row.getAttribute('data-town');
+                        const risk = row.getAttribute('data-risk');
+
+                        const matchesName = searchTerm === '' || name.includes(searchTerm);
+                        const matchesTown = townFilter === '' || town === townFilter;
+                        const matchesRisk = riskFilter === '' || risk === riskFilter;
+
+                        if (matchesName && matchesTown && matchesRisk) {
+                            row.style.display = '';
+                            visibleCount++;
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+
+                    resultsCount.textContent = `Showing ${visibleCount} of ${rows.length} premises`;
+                    noResults.classList.toggle('d-none', visibleCount > 0);
+                }
+
+                function clearFilters() {
+                    document.getElementById('liveSearchName').value = '';
+                    document.getElementById('townFilter').value = '';
+                    document.getElementById('riskFilter').value = '';
+                    filterTable();
+                }
+
+                document.getElementById('liveSearchName').addEventListener('input', filterTable);
+                document.getElementById('townFilter').addEventListener('change', filterTable);
+                document.getElementById('riskFilter').addEventListener('change', filterTable);
+
+                filterTable();
+            </script>
+}
