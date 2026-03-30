@@ -89,15 +89,27 @@ namespace FoodSafetyInspection.MVC.Controllers
                 .Replace("\n", " ");
             string safeUserName = User.Identity?.Name?
                 .Replace("\r", " ")
+                    var safeName = premises.Name?
+                        .Replace(Environment.NewLine, string.Empty)
+                        .Replace("\n", string.Empty)
+                        .Replace("\r", string.Empty);
+                    var safeTown = premises.Town?
+                        .Replace(Environment.NewLine, string.Empty)
+                        .Replace("\n", string.Empty)
+                        .Replace("\r", string.Empty);
                 .Replace("\n", " ");
-
+                        safeName, safeTown, premises.Id, User.Identity?.Name);
             try
             {
                 if (ModelState.IsValid)
                 {
                     _context.Premises.Add(premises);
+                var safeName = premises.Name?
+                    .Replace(Environment.NewLine, string.Empty)
+                    .Replace("\n", string.Empty)
+                    .Replace("\r", string.Empty);
                     await _context.SaveChangesAsync();
-                    premises.Name?.Replace("\r", "").Replace("\n", ""), User.Identity?.Name);
+                    safeName, User.Identity?.Name);
                         safePremisesName, premises.Town, premises.Id, safeUserName);
                     return RedirectToAction(nameof(Index));
                 }
