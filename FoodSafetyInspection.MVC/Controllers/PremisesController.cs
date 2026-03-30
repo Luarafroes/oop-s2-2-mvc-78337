@@ -1,4 +1,4 @@
-﻿using FoodSafetyInspection.Domain;
+using FoodSafetyInspection.Domain;
 using FoodSafetyInspection.MVC.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -83,41 +83,21 @@ namespace FoodSafetyInspection.MVC.Controllers
         {
             ModelState.Remove("Inspections");
 
-            // Sanitize user-controlled values before logging to prevent log forging
-            string safePremisesName = premises.Name?
-                .Replace("\r", " ")
-                .Replace("\n", " ");
-            string safeUserName = User.Identity?.Name?
-                .Replace("\r", " ")
-                    var safeName = premises.Name?
-                        .Replace(Environment.NewLine, string.Empty)
-                        .Replace("\n", string.Empty)
-                        .Replace("\r", string.Empty);
-                    var safeTown = premises.Town?
-                        .Replace(Environment.NewLine, string.Empty)
-                        .Replace("\n", string.Empty)
-                        .Replace("\r", string.Empty);
-                .Replace("\n", " ");
-                        safeName, safeTown, premises.Id, User.Identity?.Name);
             try
             {
                 if (ModelState.IsValid)
                 {
                     _context.Premises.Add(premises);
-                var safeName = premises.Name?
-                    .Replace(Environment.NewLine, string.Empty)
-                    .Replace("\n", string.Empty)
-                    .Replace("\r", string.Empty);
                     await _context.SaveChangesAsync();
-                    safeName, User.Identity?.Name);
-                        safePremisesName, premises.Town, premises.Id, safeUserName);
+                    _logger.LogInformation("Premises created: {PremisesName} in {Town} with ID {PremisesId} by {User}",
+                        premises.Name, premises.Town, premises.Id, User.Identity?.Name);
                     return RedirectToAction(nameof(Index));
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating premises {PremisesName} by {User}",
-                    safePremisesName, safeUserName);
+                    premises.Name, User.Identity?.Name);
                 ModelState.AddModelError("", "An unexpected error occurred. Please try again.");
             }
 
