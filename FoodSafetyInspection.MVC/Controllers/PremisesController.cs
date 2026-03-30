@@ -83,6 +83,14 @@ namespace FoodSafetyInspection.MVC.Controllers
         {
             ModelState.Remove("Inspections");
 
+            // Sanitize user-controlled values before logging to prevent log forging
+            string safePremisesName = premises.Name?
+                .Replace("\r", " ")
+                .Replace("\n", " ");
+            string safeUserName = User.Identity?.Name?
+                .Replace("\r", " ")
+                .Replace("\n", " ");
+
             try
             {
                 if (ModelState.IsValid)
@@ -90,14 +98,14 @@ namespace FoodSafetyInspection.MVC.Controllers
                     _context.Premises.Add(premises);
                     await _context.SaveChangesAsync();
                     _logger.LogInformation("Premises created: {PremisesName} in {Town} with ID {PremisesId} by {User}",
-                        premises.Name, premises.Town, premises.Id, User.Identity?.Name);
+                        safePremisesName, premises.Town, premises.Id, safeUserName);
                     return RedirectToAction(nameof(Index));
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating premises {PremisesName} by {User}",
-                    premises.Name, User.Identity?.Name);
+                    safePremisesName, safeUserName);
                 ModelState.AddModelError("", "An unexpected error occurred. Please try again.");
             }
 
