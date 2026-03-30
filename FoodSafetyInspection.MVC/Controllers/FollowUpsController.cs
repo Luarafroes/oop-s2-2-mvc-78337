@@ -167,8 +167,9 @@ namespace FoodSafetyInspection.MVC.Controllers
                 {
                     _context.Update(followUp);
                     await _context.SaveChangesAsync();
+                    var safeStatus = SanitizeForLog(followUp.Status);
                     _logger.LogInformation("FollowUp updated: ID {FollowUpId} Status {Status} by {User}",
-                        followUp.Id, followUp.Status, User.Identity?.Name);
+                        followUp.Id, safeStatus, User.Identity?.Name);
                     return RedirectToAction(nameof(Index));
                 }
             }
@@ -229,6 +230,20 @@ namespace FoodSafetyInspection.MVC.Controllers
             }
 
             return RedirectToAction(nameof(Index));
+        }
+
+        private static string SanitizeForLog(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+            {
+                return input;
+            }
+
+            // Remove line breaks to prevent log forging via injected new log lines.
+            return input
+                .Replace("\r\n", string.Empty)
+                .Replace("\n", string.Empty)
+                .Replace("\r", string.Empty);
         }
     }
 }
