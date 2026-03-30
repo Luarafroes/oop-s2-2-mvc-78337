@@ -1,4 +1,4 @@
-﻿using FoodSafetyInspection.Domain;
+using FoodSafetyInspection.Domain;
 using FoodSafetyInspection.MVC.Data;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
