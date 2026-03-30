@@ -74,8 +74,9 @@ namespace FoodSafetyInspection.MVC.Controllers
                 {
                     _context.Inspections.Add(inspection);
                     await _context.SaveChangesAsync();
+                    var safeOutcome = inspection.Outcome?.Replace("\r", string.Empty).Replace("\n", string.Empty);
                     _logger.LogInformation("Inspection created: ID {InspectionId} for PremisesId {PremisesId} Outcome {Outcome} by {User}",
-                        inspection.Id, inspection.PremisesId, inspection.Outcome, User.Identity?.Name);
+                        inspection.Id, inspection.PremisesId, safeOutcome, User.Identity?.Name);
 
                     if (inspection.Outcome == "Fail")
                         _logger.LogWarning("Failed inspection recorded: ID {InspectionId} for PremisesId {PremisesId} Score {Score}",
