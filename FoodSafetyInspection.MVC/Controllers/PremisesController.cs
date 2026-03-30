@@ -97,7 +97,7 @@ namespace FoodSafetyInspection.MVC.Controllers
                 {
                     _context.Premises.Add(premises);
                     await _context.SaveChangesAsync();
-                    _logger.LogInformation("Premises created: {PremisesName} in {Town} with ID {PremisesId} by {User}",
+                    premises.Name?.Replace("\r", "").Replace("\n", ""), User.Identity?.Name);
                         safePremisesName, premises.Town, premises.Id, safeUserName);
                     return RedirectToAction(nameof(Index));
                 }
